@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"go-crud/exception"
 	"go-crud/helper"
 	"go-crud/model/domain"
 	"go-crud/model/web"
@@ -49,7 +50,9 @@ func (service *CategoryServiceImpl) Delete(ctx context.Context, categoryId int) 
 
 func (service *CategoryServiceImpl) FindById(ctx context.Context, categoryId int) web.CategoryResponse {
 	category, err := service.CategoryRepository.FindById(ctx, categoryId)
-	helper.PanicIfError(err)
+	if err != nil {
+		panic(exception.NewNotFoundError(err.Error()))
+	}
 
 	return helper.ToCategoryResponse(category)
 }
