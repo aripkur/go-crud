@@ -268,16 +268,53 @@ func TestGetAllCategorySuccess(t *testing.T) {
 	assert.Equal(t, 200, r.StatusCode)
 
 	b, _ := io.ReadAll(r.Body)
+
 	var resBody map[string]interface{}
 	json.Unmarshal(b, &resBody)
 
-	var categories = resBody["data"].([]map[string]interface{})
+	var categories = resBody["Data"].([]interface{})
+	categoryRes0 := categories[0].(map[string]interface{})
+	categoryRes1 := categories[1].(map[string]interface{})
 
-	assert.Equal(t, category0.Id, categories[0]["id"])
-	assert.Equal(t, category1.Id, categories[1]["id"])
+	assert.Equal(t, float64(category0.Id), categoryRes0["Id"])
+	assert.Equal(t, float64(category1.Id), categoryRes1["Id"])
 
 }
 
 func TestGetAllCategoryFailed(t *testing.T) {
+	db := setupTestDB()
+	truncateCategory(db)
 
+	categoryRepository := repository.NewCategoryRepostory(db)
+	categoryRepository.Save(context.Background(), domain.Category{
+		Name: "Gadget",
+	})
+	categoryRepository.Save(context.Background(), domain.Category{
+		Name: "Gadget",
+	})
+
+	router := setupRouter(db)
+
+	request := httptest.NewRequest(http.MethodGet, "/api/categories", nil)
+	request.Header.Add("content-type", "application/json")
+	request.Header.Add("X-API-Key", "RAHASIA")
+
+	recoder := httptest.NewRecorder()
+
+	router.ServeHTTP(recoder, request)
+
+	r := recoder.Result()
+	assert.Equal(t, 200, r.StatusCode)
+
+	b, _ := io.ReadAll(r.Body)
+
+	var resBody map[string]interface{}
+	json.Unmarshal(b, &resBody)
+
+	var categories = resBody["Data"].([]interface{})
+	categoryRes0 := categories[0].(map[string]interface{})
+	categoryRes1 := categories[1].(map[string]interface{})
+
+	assert.NotEqual(t, 9, categoryRes0["Id"])
+	assert.NotEqual(t, 10, categoryRes1["Id"])
 }
